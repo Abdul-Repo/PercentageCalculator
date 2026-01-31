@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">DemoUtil</string>
+    <string name="app_name">Percentage Calculator</string>
     <string name="total">TOTAL:</string>
     <string name="value">Value:</string>
     <string name="percentage">Percentage:</string>
