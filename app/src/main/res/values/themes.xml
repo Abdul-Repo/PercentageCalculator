@@ -6,4 +6,8 @@
     </style>
 
     <style name="Theme.DemoUtil" parent="Base.Theme.DemoUtil" />
+
+    <style name="Widget.Material3.CircularView" parent="">
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

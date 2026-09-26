@@ -6,6 +6,8 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,139 +15,173 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+
 public class MainActivity extends AppCompatActivity {
 
-    private static EditText vPart;
-    private static EditText vTotal;
-    private static EditText vPercentage;
-    private static Switch percentValueSwt;
+    private EditText vPart;
+    private EditText vTotal;
+    private EditText vPercentage;
+    private Switch percentValueSwt;
+    private ToggleButton affectValueSwt;
+    private TextView affectValuetxt;
 
+    // About Me interactive controls
+    private MaterialButton aboutButton;
+    private MaterialCardView aboutCard;
+    private MaterialButton closeAboutButton;
 
+    private boolean isUpdating = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        
+        View mainView = findViewById(R.id.main);
+        if (mainView != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                return insets;
+            });
+        }
 
         vTotal = findViewById(R.id.vTotal);
         vPart = findViewById(R.id.vPart);
         vPercentage = findViewById(R.id.vPercentage);
         percentValueSwt = findViewById(R.id.percentValueSwt);
+        affectValueSwt = findViewById(R.id.affectValueSwt);
+        affectValuetxt = findViewById(R.id.affectValuetxt);
 
+        // Find and set up About Me views
+        aboutButton = findViewById(R.id.AboutButton);
+        aboutCard = findViewById(R.id.AboutCard);
+        closeAboutButton = findViewById(R.id.CloseAboutButton);
 
+        if (aboutButton != null && aboutCard != null) {
+            aboutButton.setOnClickListener(v -> {
+                aboutCard.setVisibility(View.VISIBLE);
+            });
+        }
 
-        enableValueDisablePercent();
+        if (closeAboutButton != null && aboutCard != null) {
+            closeAboutButton.setOnClickListener(v -> {
+                aboutCard.setVisibility(View.GONE);
+            });
+        }
 
+        // Keep percentage enabled as default
+        if (vTotal.getText().toString().trim().isEmpty()) {
+            disablePercentValueAff();
+        } else {
+            enablePercentDisableValue();
+        }
 
-        percentValueSwt.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (percentValueSwt.isChecked()) {
-                    enablePercentDisableValue();
-                } else {
-                    enableValueDisablePercent();
-                }
-
-
+        percentValueSwt.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (vTotal.getText().toString().trim().isEmpty()) {
+                disablePercentValueAff();
+            } else if (isChecked) {
+                enablePercentDisableValue();
+            } else {
+                enableValueDisablePercent();
             }
         });
 
-        vPart.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
+        vPart.addTextChangedListener(new SimpleTextWatcher() {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (!percentValueSwt.isChecked()) {
-                    vPercentage.setEnabled(false);
-                    float vTotalM = PercentageUtils.handleStringToFloat(vTotal.getText().toString());
-                    float vPartM = PercentageUtils.handleStringToFloat(vPart.getText().toString());
-                    float ans = ((float) vPartM /vTotalM)*100;
-                    vPercentage.setText(PercentageUtils.handleFloatToString(ans)+"%");
+                if (isUpdating || percentValueSwt.isChecked()) return;
+                
+                float vTotalM = PercentageUtils.handleStringToFloat(vTotal.getText().toString());
+                float vPartM = PercentageUtils.handleStringToFloat(s.toString());
+                
+                if (vTotalM != 0) {
+                    float ans = (vPartM / vTotalM) * 100;
+                    updateTextSilently(vPercentage, PercentageUtils.handleFloatToString(ans) + "%");
                 }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
-        vPercentage.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (percentValueSwt.isChecked()) {
-                    float vTotalM = PercentageUtils.handleStringToFloat(vTotal.getText().toString());
-                    float vPercentageM = PercentageUtils.handleStringToFloat(vPercentage.getText().toString());
-                    float ans = ((float) vTotalM * vPercentageM) / 100;
-                    vPart.setText(PercentageUtils.handleFloatToString(ans));
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
+                updateResult();
             }
         });
 
-        vTotal.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
+        vPercentage.addTextChangedListener(new SimpleTextWatcher() {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
+                if (isUpdating || !percentValueSwt.isChecked()) return;
 
+                float vTotalM = PercentageUtils.handleStringToFloat(vTotal.getText().toString());
+                float vPercentageM = PercentageUtils.handleStringToFloat(s.toString());
+                
+                float ans = (vTotalM * vPercentageM) / 100;
+                updateTextSilently(vPart, PercentageUtils.handleFloatToString(ans));
+                updateResult();
+            }
+        });
+
+        vTotal.addTextChangedListener(new SimpleTextWatcher() {
             @Override
-            public void afterTextChanged(Editable s) {
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
                 float value = PercentageUtils.handleStringToFloat(s.toString());
-
-                if(value==0){
+                if (value == 0) {
                     vPercentage.setEnabled(false);
                     vPart.setEnabled(false);
-                    vTotal.setError("Can't be zero");
-                } else{
-                    if(percentValueSwt.isChecked()){
-                        vPercentage.setEnabled(true);
-                    }else{
-                        vPart.setEnabled(true);
-
+                    vTotal.setError("Total cannot be zero");
+                } else {
+                    vTotal.setError(null);
+                    if (percentValueSwt.isChecked()) {
+                        enablePercentDisableValue();
+                    } else {
+                        enableValueDisablePercent();
                     }
                 }
-
+                updateResult();
             }
         });
 
-
+        affectValueSwt.setOnClickListener(v -> updateResult());
     }
 
+    private void updateResult() {
+        float vTotalM = PercentageUtils.handleStringToFloat(vTotal.getText().toString());
+        float vPartM = PercentageUtils.handleStringToFloat(vPart.getText().toString());
+        
+        if (vTotal.getText().toString().isEmpty() || vPart.getText().toString().isEmpty()) {
+            affectValuetxt.setText("---");
+            affectValueSwt.setEnabled(false);
+            return;
+        }
+        
+        affectValueSwt.setEnabled(true);
+        float result = affectValueSwt.isChecked() ? (vTotalM + vPartM) : (vTotalM - vPartM);
+        affectValuetxt.setText(PercentageUtils.handleFloatToString(result));
+    }
 
-    public static void enableValueDisablePercent(){
+    private void updateTextSilently(EditText editText, String text) {
+        isUpdating = true;
+        editText.setText(text);
+        isUpdating = false;
+    }
+
+    private void enableValueDisablePercent() {
         vPercentage.setEnabled(false);
         vPart.setEnabled(true);
-        vPercentage.getText().clear();
-        vPart.getText().clear();
-
     }
 
-    public static void enablePercentDisableValue(){
+    private void enablePercentDisableValue() {
         vPercentage.setEnabled(true);
         vPart.setEnabled(false);
-        vPercentage.getText().clear();
-        vPart.getText().clear();
     }
 
+    private void disablePercentValueAff() {
+        vPercentage.setEnabled(false);
+        vPart.setEnabled(false);
+        affectValueSwt.setEnabled(false);
+    }
 
+    private abstract static class SimpleTextWatcher implements TextWatcher {
+        @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        @Override public void afterTextChanged(Editable s) {}
+    }
 }
