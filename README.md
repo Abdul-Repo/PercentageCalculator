@@ -4,7 +4,7 @@
 
 Ready to start calculating? Grab the latest version below:
 
-*   **[📥 Download PercentageCalculator.apk](https://github.com/Abdul-Repo/PercentageCalculator/releases/download/v1.0.0/PercentageCalculator.apk)**
+*   **[📥 Download PercentageCalculator.apk](https://github.com/Abdul-Repo/PercentageCalculator/releases/download/v1.0.0/PercentageCalc.apk)**
 *   **[📦 View All Release Assets](https://github.com/Abdul-Repo/PercentageCalculator/releases/tag/v1.0.0)**
 
 ---
