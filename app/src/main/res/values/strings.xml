@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">NEON CORE</string>
+    <string name="app_name">Percentage Calculator</string>
     <string name="total">Total</string>
     <string name="percentage">Percentage</string>
     <string name="value">Result</string>
